@@ -18,7 +18,7 @@ app.use(express.json());
 app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 
-app.use((err, req, res, next) => {
+app.use((err, req, res, next) => { //middleware - milte hue jana; from authcontroller error next() to here: this is one example ?
     const statusCode = err.statusCode || 501;
     const message = err.message || "Internal Server Error!"//message is default of javascript but statusCode is manual
     return res.status(statusCode).json({
