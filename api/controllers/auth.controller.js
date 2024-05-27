@@ -41,7 +41,7 @@ export const signin = async (req, res, next) => {
     try {
       const user = await User.findOne({ email: req.body.email });
       if(user){//user exists
-        const token = jwt.sign({id: user._id}, process.env.JWT_SCERET);
+        const token = jwt.sign({id: user._id}, process.env.JWT_SCERET);//id->payload
         const { password: pass, ...rest} = user._doc;//in this password key is changed to pass and rest remains same 
 
         res
