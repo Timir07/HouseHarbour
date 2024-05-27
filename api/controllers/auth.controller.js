@@ -33,7 +33,39 @@ export const signin = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-
 }
   //in this if not unique and required not filled then error occurs.
   //application doesn't crash so error handling is done.
+
+  export const google = async (req, res, next) => {
+    try {
+      const user = await User.findOne({ email: req.body.email });
+      if(user){//user exists
+        const token = jwt.sign({id: user._id}, process.env.JWT_SCERET);
+        const { password: pass, ...rest} = user._doc;//in this password key is changed to pass and rest remains same 
+
+        res
+        .cookie('access_token', token, {httpOnly: true})
+        .status(200)
+        .json(rest);
+      }
+      
+      else{//creating user in mongodb so we generatePass as googleAuth doesn't use pass and aur field is true so we generare our own pass
+        const generatedPassword =  Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);//give decimal string of 36 char - 26,0-9; two times; sliced from end
+        const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
+        const newUser = new User( {username: req.body.name.split(" ").join("").toLowerCase() + Math.random().toString(36).slice(-4), email: req.body.email, password: hashedPassword, avatar: req.body.photo} );
+        
+        await newUser.save();
+        const token = jwt.sign({id: newUser._id}, process.env.JWT_SCERET);
+        const { password: pass, ...rest} = newUser._doc;//in this password key is changed to pass and rest remains same 
+
+        res
+        .cookie('access_token', token, {httpOnly: true})
+        .status(200)
+        .json(rest);//sending info from database
+      }
+
+    } catch (error) {
+      next(error);
+    }
+  }
