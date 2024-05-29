@@ -10,7 +10,7 @@ const firebaseConfig = {
   projectId: "house-harbour",
   storageBucket: "house-harbour.appspot.com",
   messagingSenderId: "978131597879",
-  appId: "1:978131597879:web:17e1e622ded4a7f5e9ddb2"
+  appId: "1:978131597879:web:17e1e622ded4a7f5e9ddb2",
 };
 
 // Initialize Firebase

@@ -1,24 +1,39 @@
-import React, { useState, useEffect } from 'react'
-import { useSelector } from 'react-redux'
-import { useRef } from 'react'
-import { getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage'
-import { app } from '../firebase';
-import { updateUserStart, updateUserFailure, updateUserSuccess, deleteUserFailure, deleteUserStart, deleteUserSuccess, signOutUserStart, signOutUserFailure, signOutUserSuccess } from '../redux/user/userSlice';
-import { useDispatch } from 'react-redux';
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useRef } from "react";
+import {
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { app } from "../firebase";
+import {
+  updateUserStart,
+  updateUserFailure,
+  updateUserSuccess,
+  deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+  signOutUserStart,
+  signOutUserFailure,
+  signOutUserSuccess,
+} from "../redux/user/userSlice";
+import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 
 export default function Profile() {
   const fileRef = useRef(null);
-  const {currentUser, loading, error} = useSelector(state => state.user)//selecting from react-redux
-  const [file, setFile] = useState(undefined)
+  const { currentUser, loading, error } = useSelector((state) => state.user); //selecting from react-redux
+  const [file, setFile] = useState(undefined);
   const [filePerc, setFilePerc] = useState(0);
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const dispatch = useDispatch();
-  const [ updateSuccess, setUpdateSuccess] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
-  useEffect(()=>{
-    if(file){
+  useEffect(() => {
+    if (file) {
       handleFileUpload(file);
     }
   }, [file]);
@@ -27,63 +42,68 @@ export default function Profile() {
     const storage = getStorage(app);
     const fileName = new Date().getTime() + file.name;
     const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, file);//orginal file ko { storage maine upload krega  by fileName } - ref
-    uploadTask.on('state_changed',//check the progress of upload
+    const uploadTask = uploadBytesResumable(storageRef, file); //orginal file ko { storage maine upload krega  by fileName } - ref
+    uploadTask.on(
+      "state_changed", //check the progress of upload
       (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setFilePerc(Math.round(progress))
-      },
-    
-      (error) => { 
-        setFileUploadError(true)
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setFilePerc(Math.round(progress));
       },
 
-      () => {getDownloadURL(uploadTask.snapshot.ref).then
-        ((downloadURL) => 
-          setFormData({...formData, avatar: downloadURL})//keep the track of prev change ...
-        )}
+      (error) => {
+        setFileUploadError(true);
+      },
+
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then(
+          (downloadURL) => setFormData({ ...formData, avatar: downloadURL }) //keep the track of prev change ...
+        );
+      }
     );
   };
 
   const handleChange = (e) => {
-    setFormData({...formData, [e.target.id]: e.target.value})//[]->dynamically selects id : username, email password
-  }
+    setFormData({ ...formData, [e.target.id]: e.target.value }); //[]->dynamically selects id : username, email password
+  };
 
-  const handleSubmit = async(e) => {
-    e.preventDefault();  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       dispatch(updateUserStart());
-      const res = await fetch(`/api/user/update/${currentUser._id}`,{//from react redux using useSelector
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData)
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        //from react redux using useSelector
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
-      if(data.success === false){
+      if (data.success === false) {
         dispatch(updateUserFailure(data.message));
-        return
+        return;
       }
 
       dispatch(updateUserSuccess(data));
       setUpdateSuccess(true);
     } catch (error) {
-      dispatch(updateUserFailure(error.message))
+      dispatch(updateUserFailure(error.message));
     }
-  }
-  
-  const handleDeleteUser = async() => {
+  };
+
+  const handleDeleteUser = async () => {
     try {
       dispatch(deleteUserStart());
 
-      const res = await fetch(`/api/user/delete/${currentUser._id}`,{//   from react redux using useSelector
-        method: 'DELETE',     
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        //   from react redux using useSelector
+        method: "DELETE",
       });
 
       const data = await res.json();
-      if(data.success === false){
+      if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
@@ -91,77 +111,107 @@ export default function Profile() {
     } catch (error) {
       dispatch(deleteUserFailureUserFailure(error.message));
     }
-  }
+  };
 
   const handleSignOut = async () => {
     try {
-      dispatch(signOutUserStart())
-      const res = await fetch('api/auth/signout');
-      const data = await res.json()
-      if(data.success === false){
-        dispatch(signOutUserFailure(data.message))
+      dispatch(signOutUserStart());
+      const res = await fetch("api/auth/signout");
+      const data = await res.json();
+      if (data.success === false) {
+        dispatch(signOutUserFailure(data.message));
         return;
       }
-      dispatch(signOutUserSuccess(data))
+      dispatch(signOutUserSuccess(data));
     } catch (error) {
-      dispatch(signOutUserFailure(error.message))
+      dispatch(signOutUserFailure(error.message));
     }
-  }
+  };
 
   return (
-    <div className='p-3 max-w-lg mx-auto'>
-      <h1 className='text-3xl font-semibold text-center my-7'>
-        Profile
-      </h1>
+    <div className="p-3 max-w-lg mx-auto">
+      <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
 
-      <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
-
-        <input onChange={(e) => setFile(e.target.files[0])} type="file" ref={fileRef} accept='image/*' hidden/>
-        <img onClick={()=>fileRef.current.click()} src={formData.avatar || currentUser.avatar} alt="" className='rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2'/>
-        <p className='text-sm self-center'>
-          {
-            fileUploadError ? (
-              <span className='text-red-700'>Error Image upload</span>
-            ) : 
-            filePerc > 0 && filePerc < 100 ? (
-              <span className='text-slate-700'>{`Uploading ${filePerc}%`}</span>) : 
-              filePerc === 100 ? (
-                <span className='text-green-700'>Image successfully uploaded!</span>
-              ) : (
-                ''
-              )
-          }
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <input
+          onChange={(e) => setFile(e.target.files[0])}
+          type="file"
+          ref={fileRef}
+          accept="image/*"
+          hidden
+        />
+        <img
+          onClick={() => fileRef.current.click()}
+          src={formData.avatar || currentUser.avatar}
+          alt=""
+          className="rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2"
+        />
+        <p className="text-sm self-center">
+          {fileUploadError ? (
+            <span className="text-red-700">Error Image upload</span>
+          ) : filePerc > 0 && filePerc < 100 ? (
+            <span className="text-slate-700">{`Uploading ${filePerc}%`}</span>
+          ) : filePerc === 100 ? (
+            <span className="text-green-700">Image successfully uploaded!</span>
+          ) : (
+            ""
+          )}
         </p>
 
-        <input type="text" onChange={handleChange}
-        defaultValue={currentUser.username} placeholder='username' id='username' className='border p-3 rounded-lg' />
-        <input type="email" onChange={handleChange}
-        defaultValue={currentUser.email} placeholder='email' id='email' className='border p-3 rounded-lg' />
-        <input type="password" onChange={handleChange}
-        placeholder='password' id='password' className='border p-3 rounded-lg' />
+        <input
+          type="text"
+          onChange={handleChange}
+          defaultValue={currentUser.username}
+          placeholder="username"
+          id="username"
+          className="border p-3 rounded-lg"
+        />
+        <input
+          type="email"
+          onChange={handleChange}
+          defaultValue={currentUser.email}
+          placeholder="email"
+          id="email"
+          className="border p-3 rounded-lg"
+        />
+        <input
+          type="password"
+          onChange={handleChange}
+          placeholder="password"
+          id="password"
+          className="border p-3 rounded-lg"
+        />
 
-        <button disabled={loading} className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
-          {loading ? 'Loading...' : 'Update'}
+        <button
+          disabled={loading}
+          className="bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80"
+        >
+          {loading ? "Loading..." : "Update"}
         </button>
 
         <Link
-          className='bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95'
-          to={'/create-listing'}
+          className="bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95"
+          to={"/create-listing"}
         >
           Create Listing
         </Link>
       </form>
 
-      <div className='flex justify-between'>
-        <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete Account</span>
-        <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>Sign Out</span>
+      <div className="flex justify-between">
+        <span
+          onClick={handleDeleteUser}
+          className="text-red-700 cursor-pointer"
+        >
+          Delete Account
+        </span>
+        <span onClick={handleSignOut} className="text-red-700 cursor-pointer">
+          Sign Out
+        </span>
       </div>
-      <p className='text-red-700 mt-5'>
-        {error ? error : ''}
-      </p>
-      <p className='text-green-700'>
-        {updateSuccess ? 'User updated successfully' : ''}
+      <p className="text-red-700 mt-5">{error ? error : ""}</p>
+      <p className="text-green-700">
+        {updateSuccess ? "User updated successfully" : ""}
       </p>
     </div>
-  )
+  );
 }
