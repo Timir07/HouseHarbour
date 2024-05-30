@@ -16,7 +16,6 @@ import {
 } from "react-icons/fa";
 import Contact from "../components/Contact";
 
-
 export default function Listing() {
   SwiperCore.use([Navigation]);
   const [listing, setListing] = useState(null);
@@ -91,8 +90,8 @@ export default function Listing() {
             <p className="text-2xl font-semibold">
               {listing.name} - ₹{" "}
               {listing.offer
-                ? listing.discountPrice.toLocaleString("en-US")
-                : listing.regularPrice.toLocaleString("en-US")}
+                ? listing.discountPrice.toLocaleString("en-IN")
+                : listing.regularPrice.toLocaleString("en-IN")}
               {listing.type === "rent" && " / month"}
             </p>
             <p className="flex items-center mt-6 gap-2 text-slate-600  text-sm">
@@ -105,7 +104,7 @@ export default function Listing() {
               </p>
               {listing.offer && (
                 <p className="bg-green-900 w-full max-w-[200px] text-white text-center p-1 rounded-md">
-                  ${+listing.regularPrice - +listing.discountPrice} OFF
+                  ₹ {+listing.regularPrice - +listing.discountPrice} OFF
                 </p>
               )}
             </div>
