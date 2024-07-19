@@ -14,10 +14,17 @@ import {
   FaParking,
   FaShare,
 } from "react-icons/fa";
+import { loadStripe } from '@stripe/stripe-js';
 import Contact from "../components/Contact";
+import Popup from "../components/Popup";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function Listing() {
+  const [paymentInProgress, setPaymentInProgress] = useState(false);
+
   SwiperCore.use([Navigation]);
+  const [showPopup, setShowPopup] = useState(true);
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -48,8 +55,56 @@ export default function Listing() {
     fetchListing();
   }, [params.listingId]);
 
+  const handlePay = async () => {
+    try {
+      setPaymentInProgress(true);
+      const response = await fetch(`/api/purchase/create/${params.listingId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUser._id,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const stripe = await stripePromise;
+        const { error } = await stripe.redirectToCheckout({
+          sessionId: data.sessionId,
+        });
+        if (error) {
+          console.error('Error redirecting to Checkout:', error);
+        }
+      } else {
+        console.error('Failed to initiate payment:', data);
+      }
+      setPaymentInProgress(false);
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      setPaymentInProgress(false);
+    }
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+  };
+  useEffect(() => {
+    if (!currentUser ) {
+      setShowPopup(true);
+    } else {
+      setShowPopup(false);
+    }
+  }, [currentUser]);
+
   return (
     <main>
+            {showPopup && (
+        <Popup
+          message="Please sign-in to contact the landlord or pay."
+          onClose={handleClosePopup}
+        />
+      )}
       {loading && <p className="text-center my-7 text-2xl">Loading...</p>}
       {error && (
         <p className="text-center my-7 text-2xl">Something went wrong!</p>
@@ -135,14 +190,23 @@ export default function Listing() {
               </li>
             </ul>
             {currentUser && listing.userRef !== currentUser._id && !contact && (
-              <button
-                onClick={() => setContact(true)}
-                className="bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 p-3"
+              <div className="flex gap-8 max-sm:flex-wrap">
+                <button
+                  onClick={() => setContact(true)}
+                  className="bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 p-3 sm:w-1/2 w-full"
+                >
+                  Contact landlord
+                </button> 
+                <button
+                onClick={handlePay}
+                disabled={paymentInProgress}
+                className={`bg-green-700 text-white rounded-lg uppercase hover:opacity-95 p-3 sm:w-1/2 w-full ${paymentInProgress && 'opacity-50 cursor-not-allowed'}`}
               >
-                Contact landlord
-              </button>
+                {paymentInProgress ? "Processing..." : "Pay"}
+              </button>        
+              </div>     
             )}
-            {contact && <Contact listing={listing} />}
+            {contact && <Contact listing={listing} setContact={setContact}/>}
           </div>
         </div>
       )}

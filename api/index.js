@@ -1,10 +1,12 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.route.js";
 import authRouter from "./routes/auth.route.js";
 import listingRouter from "./routes/listing.route.js";
+import purchaseRouter from "./routes/purchase.route.js"
 import path from "path";
 dotenv.config();
 
@@ -21,6 +23,8 @@ const _dirname = path.resolve();
 
 const app = express();
 
+app.use(cors());
+
 app.use(express.json());
 
 app.use(cookieParser());
@@ -28,6 +32,7 @@ app.use(cookieParser());
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/listing", listingRouter);
+app.use("/api/purchase", purchaseRouter);
 
 app.use(express.static(path.join(_dirname, "/client/dist")));
 app.get("*", (req, res) => {
